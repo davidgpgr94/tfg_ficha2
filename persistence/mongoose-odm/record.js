@@ -1,5 +1,7 @@
 'use strict'
 
+var HttpStatus = require('http-status');
+
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
@@ -53,8 +55,10 @@ RecordSchema.pre('save', async function(next) {
     // ----E---NE----S-------
     // ----E---NE---NS----S--
     var solapados = await RecordODM.where('employee', this.employee).where('entry').lte(this.entry).where('exit').gte(this.entry).exec();
-    if (solapados) {
-        throw new Error('La entrada no puede pertenecer a ningún intervalo de algún registro ya creado previamente');
+    if (solapados.length > 0) {
+        let error = new Error('La entrada no puede pertenecer a ningún intervalo de algún registro ya creado previamente');
+        error.code = HttpStatus.CONFLICT;
+        throw error;
     }
 
     // La salida esta dentro del intervalo de algun registro
@@ -62,8 +66,10 @@ RecordSchema.pre('save', async function(next) {
     // ----NE---E---NS----S--
     if (this.exit !== null) {
         solapados = await RecordODM.where('employee', this.employee).where('entry').lte(this.exit).where('exit').gte(this.exit).exec();
-        if (solapados) {
-            throw new Error('La salida no puede pertenecer a ningún intervalo de algún registro ya creado previamente');
+        if (solapados.length > 0) {
+            let error = new Error('La salida no puede pertenecer a ningún intervalo de algún registro ya creado previamente');
+            error.code = HttpStatus.CONFLICT;
+            throw error;
         }
     }
     
@@ -73,11 +79,27 @@ RecordSchema.pre('save', async function(next) {
         solapados = await RecordODM.where('employee', this.employee)
             .where('entry').gte(this.entry).where('exit').gte(this.entry)
             .where('entry').lte(this.exit).where('exit').lte(this.exit);
-        if (solapados) {
-            throw new Error('Ningún registro ya existente puede tener su intervalo dentro del intervalo del nuevo registro');
+        if (solapados.length > 0) {
+            let error = new Error('Ningún registro ya existente puede tener su intervalo dentro del intervalo del nuevo registro');
+            error.code = HttpStatus.CONFLICT;
+            throw error;
         }
     }
+    next();
+});
 
+// Como maximo puede haber un registro con exit a null por empleado
+RecordSchema.pre('save', async function(next) {
+    if (this.exit) {
+        return next();
+    }
+    var sinExit = await RecordODM.where('employee', this.employee).where('exit', null).exec();
+    if (sinExit.length > 0) {
+        let error = new Error('Como mucho puede haber un registro sin completar');
+        error.code = HttpStatus.CONFLICT;
+        throw error;
+    }
+    next();
 });
 
 var RecordODM = mongoose.model('Record', RecordSchema);

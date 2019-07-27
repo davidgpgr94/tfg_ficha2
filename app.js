@@ -10,6 +10,7 @@ var API_VERSION = process.env.API_VERSION;
 var BASE_URL = process.env.BASE_URL;
 
 // cargamos las rutas
+var record_routes = require('./routes/record.routes');
 
 // middlewares comunes
 app.use(bodyParser.urlencoded({extended: false}));
@@ -26,5 +27,6 @@ app.use((req, res, next) => {
 });
 
 // rutas base
+app.use(`/${BASE_API}/${API_VERSION}`, record_routes);
 
 module.exports = app;
