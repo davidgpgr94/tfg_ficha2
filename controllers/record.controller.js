@@ -27,7 +27,7 @@ async function newRecord(req, res) {
 
 
         record = await facade.newRecord(params.employeeId, registry);
-        res.status(HttpStatus.CREATED).send({ record });
+        res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -50,7 +50,7 @@ async function manualExit(req, res) {
         }
 
         record = await facade.manualExit(params.employeeId, exit);
-        res.status(HttpStatus.CREATED).send({ record });
+        res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -68,7 +68,7 @@ async function quickEntry(req, res) {
     let record;
     try {
         record = await facade.quickEntry(params.employeeId);
-        res.status(HttpStatus.OK).send({ record });
+        res.status(HttpStatus.OK).send( record );
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -86,7 +86,7 @@ async function quickExit(req, res) {
     let record;
     try {
         record = await facade.quickExit(params.employeeId);
-        res.status(HttpStatus.OK).send({ record });
+        res.status(HttpStatus.OK).send( record );
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
