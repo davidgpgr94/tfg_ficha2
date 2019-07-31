@@ -11,6 +11,7 @@ var BASE_URL = process.env.BASE_URL;
 
 // cargamos las rutas
 var record_routes = require('./routes/record.routes');
+var login_routes = require('./routes/login.routes');
 
 // middlewares comunes
 app.use(bodyParser.urlencoded({extended: false}));
@@ -28,5 +29,6 @@ app.use((req, res, next) => {
 
 // rutas base
 app.use(`/${BASE_API}/${API_VERSION}`, record_routes);
+app.use(`/${BASE_API}/${API_VERSION}`, login_routes);
 
 module.exports = app;
