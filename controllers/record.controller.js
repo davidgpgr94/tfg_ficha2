@@ -6,7 +6,7 @@ var HttpStatus = require('http-status');
 
 async function newRecord(req, res) {
     let params = req.body;
-    if (!params.employeeId || params.employeeId == null || !params.entry || params.entry == null) {
+    if (!params.entry || params.entry == null) {
         return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Faltan datos del registro' });
     }
 
@@ -26,7 +26,7 @@ async function newRecord(req, res) {
         }
 
 
-        record = await facade.newRecord(params.employeeId, registry);
+        record = await facade.newRecord(req.employee._id, registry);
         res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
@@ -38,7 +38,7 @@ async function newRecord(req, res) {
 
 async function manualExit(req, res) {
     let params = req.body;
-    if (!params.employeeId || params.employeeId == null || !params.exit || params.exit == null) {
+    if (!params.exit || params.exit == null) {
         return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Faltan datos para el registro de salida' });
     }
 
@@ -49,7 +49,7 @@ async function manualExit(req, res) {
             return res.status(HttpStatus.BAD_REQUEST).send({ message: 'No está permitido hacer un registro de salida por adelantado' });
         }
 
-        record = await facade.manualExit(params.employeeId, exit);
+        record = await facade.manualExit(req.employee._id, exit);
         res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
@@ -60,14 +60,9 @@ async function manualExit(req, res) {
 }
 
 async function quickEntry(req, res) {
-    let params = req.body;
-    if (!params.employeeId || params.employeeId == null) {
-        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Falta especificar el empleado' });
-    }
-
     let record;
     try {
-        record = await facade.quickEntry(params.employeeId);
+        record = await facade.quickEntry(req.employee._id);
         res.status(HttpStatus.OK).send( record );
     } catch (e) {
         if (!e.code) {
@@ -78,14 +73,9 @@ async function quickEntry(req, res) {
 }
 
 async function quickExit(req, res) {
-    let params = req.body;
-    if (!params.employeeId || params.employeeId == null) {
-        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Falta especificar el empleado' });
-    }
-
     let record;
     try {
-        record = await facade.quickExit(params.employeeId);
+        record = await facade.quickExit(req.employee._id);
         res.status(HttpStatus.OK).send( record );
     } catch (e) {
         if (!e.code) {
