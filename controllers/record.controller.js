@@ -3,6 +3,9 @@
 var facade = require('../persistence/facade');
 var HttpStatus = require('http-status');
 
+var Request = require('express').request;
+var Response = require('express').response;
+
 
 async function newRecord(req, res) {
     let params = req.body;
@@ -85,9 +88,50 @@ async function quickExit(req, res) {
     }
 }
 
+/**
+ * @param {Request} req Request object
+ * @param {Response} res Response object
+ */
+async function getRecords(req, res) {
+    let records;
+    let employee_id;
+    if (req.query && req.query.employee) {
+        if (req.employee.is_admin) {
+            employee_id = req.query.employee;
+        } else {
+            return res.status(HttpStatus.UNAUTHORIZED).send({ message: "Función solo disponible para administradores" });
+        }
+    } else {
+        employee_id = req.employee._id;
+    }
+
+    let query = {};
+    if (req.query && req.query.from) {
+        query.from = new Date(req.query.from);
+    }
+    if (req.query && req.query.to) {
+        query.to = new Date(req.query.to);
+    }
+
+    if (query.from && query.to && (query.to < query.from) ) {
+        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'El intervalo de búsqueda es erróneo' });
+    }
+    
+    try {
+        records = await facade.getRecords(employee_id, query);
+        res.status(HttpStatus.FOUND).send(records);
+    } catch (e) {
+        if (!e.code) {
+            e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        res.status(e.code).send({ message: e.message });
+    }
+}
+
 module.exports = {
     newRecord,
     quickEntry,
     quickExit,
-    manualExit
+    manualExit,
+    getRecords
 }

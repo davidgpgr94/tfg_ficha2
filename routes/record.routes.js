@@ -12,4 +12,6 @@ api.post('/manual_exit', auth, RecordController.manualExit);
 api.post('/quick_entry', auth, RecordController.quickEntry);
 api.post('/quick_exit', auth, RecordController.quickExit);
 
+api.get('/records', auth, RecordController.getRecords);
+
 module.exports = api;

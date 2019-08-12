@@ -77,6 +77,24 @@ class Facade {
         return record;
     }
 
+    /**
+     * Return the records of the employee specified
+     * @param {string} employeeId The records' employee's id
+     * @param {Object} query
+     * @param {Date} [query.from]
+     * @param {Date} [query.to]
+     * @returns {Array<Record>} 
+     */
+    static async getRecords(employeeId, query) {
+        let records;
+        try {
+            records = await RepositoryRecord.getRecords(employeeId, query);
+        } catch (e) {
+            throw e;
+        }
+        return records;
+    }
+
 }
 
 module.exports = Facade;
