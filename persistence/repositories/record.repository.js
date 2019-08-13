@@ -199,12 +199,12 @@ class RepositoryRecord {
             let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
             let find = RecordODM.where('employee', employeeId);
             if (query.from) {
-                let from = query.from.setHours(0,0,0,0);
-                find.where('entry').gte(from);
+                //let from = query.from.setHours(0,0,0,0);
+                find.where('entry').gte(query.from);
             }
             if (query.to) {
-                let to = query.to.setHours(0,0,0,0);
-                find.where('entry').lte(to);
+                //let to = query.to.setHours(0,0,0,0);
+                find.where('entry').lte(query.to);
             }
             if (!query.from && !query.to) {
                 let todayStart = new Date(Date.now());
