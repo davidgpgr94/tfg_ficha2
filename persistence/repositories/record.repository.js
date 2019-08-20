@@ -205,7 +205,7 @@ class RepositoryRecord {
             }
             
             let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
-            let find = RecordODM.where('employee', employeeId);
+            let find = RecordODM.where('employee', employeeId).sort('entry');
             let query_total_records = RecordODM.where('employee', employeeId);
             if (query.from) {
                 //let from = query.from.setHours(0,0,0,0);
@@ -228,11 +228,21 @@ class RepositoryRecord {
 
             // Paginacion
             let total_records = await query_total_records.count().exec();
-            let num_pages = parseInt((total_records/RECORDS_PER_PAGE)+1);
+            let num_pages = parseInt(total_records/RECORDS_PER_PAGE);
+            if ((total_records % RECORDS_PER_PAGE) != 0) ++num_pages;
+            //let num_pages = parseInt((total_records/RECORDS_PER_PAGE)+1);
             if (page == null || page < 1) page = 1;
             let skip_page = (page-1)*RECORDS_PER_PAGE;
-
-            let mRecords = await find.skip(skip_page).limit(RECORDS_PER_PAGE).lean().exec();
+            
+            let mRecords;
+            if (!query.from && !query.to) {
+                mRecords = await find.exec();
+                num_pages = 1;
+                page = 1;
+            } else {
+                mRecords = await find.skip(skip_page).limit(RECORDS_PER_PAGE).lean().exec();
+            }
+            //let mRecords = await find.skip(skip_page).limit(RECORDS_PER_PAGE).lean().exec();
             // --Paginacion
 
 
@@ -251,7 +261,8 @@ class RepositoryRecord {
             let context = {
                 records: dtoRecords,
                 num_pages: num_pages,
-                page: page
+                page: page,
+                total_records: total_records
             }
             return context;
         } catch (e) {
