@@ -93,7 +93,7 @@ async function quickExit(req, res) {
  * @param {Response} res Response object
  */
 async function getRecords(req, res) {
-    let records;
+    let context;
     let employee_id;
     if (req.query && req.query.employee) {
         if (req.employee.is_admin) {
@@ -118,8 +118,8 @@ async function getRecords(req, res) {
     }
     
     try {
-        records = await facade.getRecords(employee_id, query);
-        res.status(HttpStatus.FOUND).send(records);
+        context = await facade.getRecords(employee_id, query, req.query.page);
+        res.status(HttpStatus.FOUND).send(context);
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;

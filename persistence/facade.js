@@ -78,17 +78,25 @@ class Facade {
     }
 
     /**
-     * Return the records of the employee specified
-     * @param {string} employeeId The records' employee's id
+     * Return all records of the employee specified. If there is not query, return all records created in current day.
+     * 
+     * @typedef {Object} Context
+     * @property {Array<Record>} records - The employee's records
+     * @property {number} num_pages - The number of pages
+     * @property {number} page - The current page
+     * 
+     * @param {string} employeeId
      * @param {Object} query
      * @param {Date} [query.from]
      * @param {Date} [query.to]
-     * @returns {Array<Record>} 
+     * @param {(number | null)} page
+     * @returns {Context} The employee's records
+     * @throws Will throw an error if the employeeId is not in the DB
      */
-    static async getRecords(employeeId, query) {
+    static async getRecords(employeeId, query, page) {
         let records;
         try {
-            records = await RepositoryRecord.getRecords(employeeId, query);
+            records = await RepositoryRecord.getRecords(employeeId, query, page);
         } catch (e) {
             throw e;
         }
