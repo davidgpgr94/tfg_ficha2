@@ -1,11 +1,14 @@
 'use strict'
 
 var Record = require('../../dto/record.dto');
+var Employee = require('../../dto/employee.dto');
 
 var RecordODM = require('../mongoose-odm/record');
 var EmployeeODM = require('../mongoose-odm/employee');
 
 var HttpStatus = require('http-status');
+
+const RECORDS_PER_PAGE = 2;
 
 class RepositoryRecord {
 
@@ -168,6 +171,89 @@ class RepositoryRecord {
 
             return dtoRecord;
 
+        } catch (e) {
+            if (!e.code) {
+                e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Return all records of the employee specified. If there is not query, return all records created in current day.
+     * 
+     * @typedef {Object} Context
+     * @property {Array<Record>} records - The employee's records
+     * @property {number} num_pages - The number of pages
+     * @property {number} page - The current page
+     * 
+     * @param {string} employeeId
+     * @param {Object} query
+     * @param {Date} [query.from]
+     * @param {Date} [query.to]
+     * @param {(number | null)} page
+     * @returns {Context} The employee's records
+     * @throws Will throw an error if the employeeId is not in the DB
+     */
+    static async getRecords(employeeId, query, page) {
+        try {
+            let employee = await EmployeeODM.findById(employeeId).exec();
+            if (!employee) {
+                let error = new Error(`El empleado con id ${employeeId} no existe`);
+                error.code = HttpStatus.BAD_REQUEST;
+                throw error;
+            }
+            
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let find = RecordODM.where('employee', employeeId);
+            let query_total_records = RecordODM.where('employee', employeeId);
+            if (query.from) {
+                //let from = query.from.setHours(0,0,0,0);
+                find.where('entry').gte(query.from);
+                query_total_records.where('entry').gte(query.from);
+            }
+            if (query.to) {
+                //let to = query.to.setHours(0,0,0,0);
+                find.where('entry').lte(query.to);
+                query_total_records.where('entry').lte(query.to);
+            }
+            if (!query.from && !query.to) {
+                let todayStart = new Date(Date.now());
+                let todayEnd = new Date(Date.now());
+                todayStart.setHours(0,0,0,0);
+                todayEnd.setHours(23,59,59,59);
+                find.where('entry').gte(todayStart).where('entry').lte(todayEnd);
+                query_total_records.where('entry').gte(todayStart).where('entry').lte(todayEnd);
+            }
+
+            // Paginacion
+            let total_records = await query_total_records.count().exec();
+            let num_pages = parseInt((total_records/RECORDS_PER_PAGE)+1);
+            if (page == null || page < 1) page = 1;
+            let skip_page = (page-1)*RECORDS_PER_PAGE;
+
+            let mRecords = await find.skip(skip_page).limit(RECORDS_PER_PAGE).lean().exec();
+            // --Paginacion
+
+
+            //let mRecords = await find.exec();
+            //let mRecords = await RecordODM.where('employee', employeeId).where('entry', new Date(Date.now()));
+            let dtoRecords = [];
+            mRecords.forEach(mRecord => {
+                let r = new Record(mRecord._id, dtoEmployee, mRecord.entry);
+                if (mRecord.exit && mRecord.exit !== null && mRecord.exit !== undefined) {
+                    r.setExit(mRecord.exit);
+                }
+                r.setSignedByEmployee(mRecord.signed_by_employee);
+                r.setSignedByAdmin(mRecord.signed_by_admin);
+                dtoRecords.push(r);
+            });
+            let context = {
+                records: dtoRecords,
+                num_pages: num_pages,
+                page: page
+            }
+            return context;
         } catch (e) {
             if (!e.code) {
                 e.code = HttpStatus.INTERNAL_SERVER_ERROR;

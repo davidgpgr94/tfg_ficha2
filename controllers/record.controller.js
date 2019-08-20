@@ -3,10 +3,13 @@
 var facade = require('../persistence/facade');
 var HttpStatus = require('http-status');
 
+var Request = require('express').request;
+var Response = require('express').response;
+
 
 async function newRecord(req, res) {
     let params = req.body;
-    if (!params.employeeId || params.employeeId == null || !params.entry || params.entry == null) {
+    if (!params.entry || params.entry == null) {
         return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Faltan datos del registro' });
     }
 
@@ -26,7 +29,7 @@ async function newRecord(req, res) {
         }
 
 
-        record = await facade.newRecord(params.employeeId, registry);
+        record = await facade.newRecord(req.employee._id, registry);
         res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
@@ -38,7 +41,7 @@ async function newRecord(req, res) {
 
 async function manualExit(req, res) {
     let params = req.body;
-    if (!params.employeeId || params.employeeId == null || !params.exit || params.exit == null) {
+    if (!params.exit || params.exit == null) {
         return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Faltan datos para el registro de salida' });
     }
 
@@ -49,7 +52,7 @@ async function manualExit(req, res) {
             return res.status(HttpStatus.BAD_REQUEST).send({ message: 'No está permitido hacer un registro de salida por adelantado' });
         }
 
-        record = await facade.manualExit(params.employeeId, exit);
+        record = await facade.manualExit(req.employee._id, exit);
         res.status(HttpStatus.CREATED).send( record );
     } catch (e) {
         if (!e.code) {
@@ -60,14 +63,9 @@ async function manualExit(req, res) {
 }
 
 async function quickEntry(req, res) {
-    let params = req.body;
-    if (!params.employeeId || params.employeeId == null) {
-        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Falta especificar el empleado' });
-    }
-
     let record;
     try {
-        record = await facade.quickEntry(params.employeeId);
+        record = await facade.quickEntry(req.employee._id);
         res.status(HttpStatus.OK).send( record );
     } catch (e) {
         if (!e.code) {
@@ -78,15 +76,50 @@ async function quickEntry(req, res) {
 }
 
 async function quickExit(req, res) {
-    let params = req.body;
-    if (!params.employeeId || params.employeeId == null) {
-        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Falta especificar el empleado' });
-    }
-
     let record;
     try {
-        record = await facade.quickExit(params.employeeId);
+        record = await facade.quickExit(req.employee._id);
         res.status(HttpStatus.OK).send( record );
+    } catch (e) {
+        if (!e.code) {
+            e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        res.status(e.code).send({ message: e.message });
+    }
+}
+
+/**
+ * @param {Request} req Request object
+ * @param {Response} res Response object
+ */
+async function getRecords(req, res) {
+    let context;
+    let employee_id;
+    if (req.query && req.query.employee) {
+        if (req.employee.is_admin) {
+            employee_id = req.query.employee;
+        } else {
+            return res.status(HttpStatus.UNAUTHORIZED).send({ message: "Función solo disponible para administradores" });
+        }
+    } else {
+        employee_id = req.employee._id;
+    }
+
+    let query = {};
+    if (req.query && req.query.from) {
+        query.from = new Date(req.query.from);
+    }
+    if (req.query && req.query.to) {
+        query.to = new Date(req.query.to);
+    }
+
+    if (query.from && query.to && (query.to < query.from) ) {
+        return res.status(HttpStatus.BAD_REQUEST).send({ message: 'El intervalo de búsqueda es erróneo' });
+    }
+    
+    try {
+        context = await facade.getRecords(employee_id, query, req.query.page);
+        res.status(HttpStatus.FOUND).send(context);
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -99,5 +132,6 @@ module.exports = {
     newRecord,
     quickEntry,
     quickExit,
-    manualExit
+    manualExit,
+    getRecords
 }
