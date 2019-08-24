@@ -84,6 +84,28 @@ class RepositoryEmployee {
         
     }
 
+    /**
+     * Get a list of the employees in the system as employee.dto
+     * 
+     * @returns {Array<Employee>} The list of employees in the system
+     */
+    static async getEmployees() {
+        try {
+            let mEmployees = await EmployeeODM.find().lean().exec();
+            let dtoEmployees = [];
+            mEmployees.forEach(mEmployee => {
+                let dtoEmployee = new Employee(mEmployee._id, mEmployee.name, mEmployee.surname, mEmployee.login, mEmployee.is_admin);
+                dtoEmployees.push(dtoEmployee);
+            });
+            return dtoEmployees;
+        } catch (e) {
+            if (!e.code) {
+                e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            throw e;
+        }
+    }
+
 }
 
 module.exports = RepositoryEmployee;

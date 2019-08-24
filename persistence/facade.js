@@ -1,7 +1,9 @@
 'use strict'
 
 var RepositoryRecord = require('./repositories/record.repository');
+var RepositoryEmployee = require('./repositories/employee.repository');
 var Record = require('../dto/record.dto');
+var Employee = require('../dto/employee.dto');
 
 class Facade {
 
@@ -111,6 +113,21 @@ class Facade {
             throw e;
         }
         return record;
+    }
+
+    /**
+     * Get a list of the employees in the system as employee.dto
+     * 
+     * @returns {Array<Employee>} The list of employees in the system
+     */
+    static async getEmployees() {
+        let employees;
+        try {
+            employees = await RepositoryEmployee.getEmployees();
+        } catch (e) {
+            throw e;
+        }
+        return employees;
     }
 
 }
