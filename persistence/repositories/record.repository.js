@@ -40,6 +40,19 @@ class RepositoryRecord {
                 mRecord.exit = registry.exit;
             }
 
+            if (!registry.exit) {
+                let todayStart = new Date(Date.now());
+                let todayEnd = new Date(Date.now());
+                todayStart.setHours(0,0,0,0);
+                todayEnd.setHours(23,59,59,59);
+                let numTodayRecords = await RecordODM.where('employee', employeeId).where('entry').gte(todayStart).where('entry').lte(todayEnd).count().exec();
+                if (numTodayRecords > 0) {
+                    let error = new Error(`No se puede realizar un registro de entrada en diferido porque ya existen registros en el día actual`);
+                    error.code = HttpStatus.BAD_REQUEST;
+                    throw error;
+                }
+            }
+
             let mSavedRecord = await mRecord.save();
             if (!mSavedRecord) {
                 let error = new Error(`Algo ha fallado al crear el nuevo registro y no ha sido guardado`);
@@ -47,7 +60,8 @@ class RepositoryRecord {
                 throw error;
             }
 
-            let dtoRecord = new Record(mSavedRecord._id, mSavedRecord.employee, mSavedRecord.entry);
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let dtoRecord = new Record(mSavedRecord._id, dtoEmployee, mSavedRecord.entry);
             dtoRecord.setExit(mSavedRecord.exit);
             
             return dtoRecord;
@@ -87,7 +101,8 @@ class RepositoryRecord {
 
             await record_to_exit.save();
 
-            let dtoRecord = new Record(record_to_exit._id, record_to_exit.employee, record_to_exit.entry);
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let dtoRecord = new Record(record_to_exit._id, dtoEmployee, record_to_exit.entry);
             dtoRecord.setExit(record_to_exit.exit);
             
             return dtoRecord;
@@ -127,7 +142,8 @@ class RepositoryRecord {
                 throw error;
             }
 
-            let dtoRecord = new Record(mSavedRecord._id, mSavedRecord.employee, mSavedRecord.entry);
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let dtoRecord = new Record(mSavedRecord._id, dtoEmployee, mSavedRecord.entry);
 
             return dtoRecord;
         } catch (e) {
@@ -166,7 +182,8 @@ class RepositoryRecord {
             
             await record_to_exit.save();
 
-            let dtoRecord = new Record(record_to_exit._id, record_to_exit.employee, record_to_exit.entry);
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let dtoRecord = new Record(record_to_exit._id, dtoEmployee, record_to_exit.entry);
             dtoRecord.setExit(record_to_exit.exit);
 
             return dtoRecord;
@@ -265,6 +282,34 @@ class RepositoryRecord {
                 total_records: total_records
             }
             return context;
+        } catch (e) {
+            if (!e.code) {
+                e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            throw e;
+        }
+    }
+
+    static async getIncompletedRecord(employeeId) {
+        try {
+            let employee = await EmployeeODM.findById(employeeId).lean().exec();
+            if (!employee) {
+                let error = new Error(`El empleado con id ${employeeId} no existe`);
+                error.code = HttpStatus.BAD_REQUEST;
+                throw error;
+            }
+
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let incompleted_records = await RecordODM.where('employee', employeeId).where('exit', null).lean().exec();
+            if (incompleted_records.length > 0) {
+                let dtoRecord = new Record(incompleted_records[0]._id, dtoEmployee, incompleted_records[0].entry);
+                dtoRecord.setSignedByEmployee(incompleted_records[0].signed_by_employee);
+                dtoRecord.setSignedByAdmin(incompleted_records[0].signed_by_admin);
+                return dtoRecord;
+            } else {
+                return null;
+            }
+            
         } catch (e) {
             if (!e.code) {
                 e.code = HttpStatus.INTERNAL_SERVER_ERROR;

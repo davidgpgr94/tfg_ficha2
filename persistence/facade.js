@@ -103,6 +103,16 @@ class Facade {
         return records;
     }
 
+    static async getIncompletedRecord(employeeId) {
+        let record;
+        try {
+            record = await RepositoryRecord.getIncompletedRecord(employeeId);
+        } catch (e) {
+            throw e;
+        }
+        return record;
+    }
+
 }
 
 module.exports = Facade;

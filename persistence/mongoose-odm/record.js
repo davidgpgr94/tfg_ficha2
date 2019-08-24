@@ -5,6 +5,8 @@ var HttpStatus = require('http-status');
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
+var moment = require('moment');
+
 var RecordSchema = Schema({
     employee: {
         type: Schema.Types.ObjectId,
@@ -99,6 +101,22 @@ RecordSchema.pre('save', async function(next) {
         error.code = HttpStatus.CONFLICT;
         throw error;
     }
+    next();
+});
+
+RecordSchema.pre('save', async function(next) {
+    if (!this.exit) {
+        return next();
+    }
+
+    let entry = moment(this.entry);
+    let exit = moment(this.exit);
+    if (entry.isBefore(exit, 'day')) {
+        let error = new Error('El registro de salida tiene que ser en el mismo día que en su correspondiente registro de entrada');
+        error.code = HttpStatus.CONFLICT;
+        throw error;
+    }
+
     next();
 });
 

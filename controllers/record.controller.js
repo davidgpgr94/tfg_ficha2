@@ -27,6 +27,9 @@ async function newRecord(req, res) {
                 return res.status(HttpStatus.BAD_REQUEST).send({ message: 'No está permitido hacer un registro de una salida por adelantado'})
             }
         }
+        if (!registry.exit && registry.entry < new Date(Date.now()).setHours(0,0,0,0) ) {
+            return res.status(HttpStatus.BAD_REQUEST).send({ message: 'Hace falta especificar la hora de salida también' })
+        }
 
 
         record = await facade.newRecord(req.employee._id, registry);
@@ -119,7 +122,29 @@ async function getRecords(req, res) {
     
     try {
         context = await facade.getRecords(employee_id, query, req.query.page);
-        res.status(HttpStatus.FOUND).send(context);
+        res.status(HttpStatus.OK).send(context);
+    } catch (e) {
+        if (!e.code) {
+            e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        res.status(e.code).send({ message: e.message });
+    }
+}
+
+/**
+ * @param {Request} req Request object
+ * @param {Response} res Response object
+ */
+async function getIncompletedRecord(req, res) {
+    let employee_id = req.employee._id;
+    let record;
+    try {
+        record = await facade.getIncompletedRecord(employee_id);
+        if (record == null) {
+            return res.status(HttpStatus.NO_CONTENT).end();    
+        } else {
+            return res.status(HttpStatus.OK).send(record);
+        }
     } catch (e) {
         if (!e.code) {
             e.code = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -133,5 +158,6 @@ module.exports = {
     quickEntry,
     quickExit,
     manualExit,
-    getRecords
+    getRecords,
+    getIncompletedRecord
 }
