@@ -46,7 +46,7 @@ class RepositoryRecord {
                 todayStart.setHours(0,0,0,0);
                 todayEnd.setHours(23,59,59,59);
                 let numTodayRecords = await RecordODM.where('employee', employeeId).where('entry').gte(todayStart).where('entry').lte(todayEnd).count().exec();
-                if (numTodayRecords > 0) {
+                if (numTodayRecords > 0 && todayStart > registry.entry) {
                     let error = new Error(`No se puede realizar un registro de entrada en diferido porque ya existen registros en el día actual`);
                     error.code = HttpStatus.BAD_REQUEST;
                     throw error;
