@@ -9,7 +9,7 @@ var disconnected = colors.disconnected;
 
 module.exports = function() {
     mongoose.Promise = global.Promise;
-    mongoose.connect(`${process.env.DB_CONNECTION}://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
+    mongoose.connect(`${process.env.DB_URL}`);
     
     mongoose.connection.on('connected', () => {
         console.log(connected('Conexión a la base de datos ha sido establecida correctamente'));
