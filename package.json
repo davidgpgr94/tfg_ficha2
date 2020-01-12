@@ -4,7 +4,7 @@
   "description": "Proyecto TFG de David Gonzalez Perez",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "node index.js",
     "debug": "set DEBUG=express:* & node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -31,5 +31,8 @@
   },
   "devDependencies": {
     "nodemon": "^1.19.1"
+  },
+  "engines": {
+    "node": "10.13.0"
   }
 }
