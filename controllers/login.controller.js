@@ -7,6 +7,8 @@ var jwt = require('../services/jwt');
 var Request = require('express').request;
 var Response = require('express').response;
 
+var EmployeeDTO = require('../dto/employee.dto');
+
 /**
  * @param {Request} req Request object
  * @param {Response} res Response object
@@ -62,7 +64,44 @@ async function register(req, res) {
     }
 }
 
+/**
+ * 
+ * @param {Request} req Request object
+ * @param {Response} res Response object
+ */
+async function changePassword(req, res) {
+    let params = req.body;
+
+    if (!params.old_password || params.old_password == null || !params.new_password || params.new_password == null || !params.repeat_password || params.repeat_password == null) {
+        return res.status(HttpStatus.BAD_REQUEST).send({message: 'Faltan datos'});
+    }
+
+    
+    let employee;
+    try {
+        /** @type {EmployeeDTO} */
+        let jwtEmployee = req.employee;
+        
+        employee = await facade.login(jwtEmployee.login, params.old_password);
+        
+        if (params.new_password != params.repeat_password) {
+            return res.status(HttpStatus.BAD_REQUEST).send({message: 'Las contraseñas no coinciden'});
+        }
+
+        await facade.changePassword(employee._id, params.new_password);
+
+        return res.status(HttpStatus.NO_CONTENT).send();
+
+    } catch (e) {
+        if (!e.code) {
+            e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return res.status(e.code).send({message: e.message});
+    }
+}
+
 module.exports = {
     login,
-    register
+    register,
+    changePassword
 }

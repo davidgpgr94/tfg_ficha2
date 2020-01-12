@@ -106,6 +106,40 @@ class RepositoryEmployee {
         }
     }
 
+    /**
+     * Change the password of the user specified by its id
+     * 
+     * @param {string} employeeId The employee's id
+     * @param {string} newPassword The new employee's password
+     * @returns {void}
+     * @throws Will throw an eraror if there is not a employee with the id specified or if there is some problem with the DB
+     */
+    static async changePassword(employeeId, newPassword) {
+        let employee;
+        try {
+            employee = await EmployeeODM.findById(employeeId).exec();
+            if (employee) {
+                employee.password = bcrypt.hashSync(newPassword, null);
+                let mEmployeeSaved = await employee.save();
+                
+                if (!mEmployeeSaved) {
+                    let error = new Error('Algo ha fallado a la hora de cambiar la contraseña');
+                    error.code = HttpStatus.INTERNAL_SERVER_ERROR;
+                    throw error;
+                }
+            } else {
+                let error = new Error('No existe ningún empleado con el id especificado');
+                error.code = HttpStatus.NOT_FOUND;
+                throw error;
+            }
+        } catch (e) {
+            if (!e.code) {
+                e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            throw e;
+        }
+    }
+
 }
 
 module.exports = RepositoryEmployee;

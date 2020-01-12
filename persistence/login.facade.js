@@ -44,6 +44,22 @@ class LoginFacade {
         }
     }
 
+    /**
+     * Change the password of the employee specified by its id
+     * 
+     * @param {string} employeeId The employee's id
+     * @param {string} newPassword The new employee's password
+     * @returns {void}
+     * @throws Will throw an eraror if there is not a employee with the id specified or if there is some problem with the DB
+     */
+    static async changePassword(employeeId, newPassword) {
+        try {
+            await RepositoryEmployee.changePassword(employeeId, newPassword);
+        } catch (e) {
+            throw e;
+        }
+    }
+
 }
 
 module.exports = LoginFacade;
