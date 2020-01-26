@@ -5,7 +5,7 @@ var HttpStatus = require('http-status');
 
 var Request = require('express').request;
 var Response = require('express').response;
-
+const pdf = require('../services/pdf_generator');
 
 async function newRecord(req, res) {
     let params = req.body;
@@ -153,11 +153,54 @@ async function getIncompletedRecord(req, res) {
     }
 }
 
+/**
+ * @param {Request} req Request object
+ * @param {Response} res Response object
+ */
+async function getReport(req, res) {
+    let records;
+    let employee_id;
+    if (req.query && req.query.employee) {
+        if (req.employee.is_admin) {
+            employee_id = req.query.employee;
+        } else {
+            return res.status(HttpStatus.UNAUTHORIZED).send({ message: "Función solo disponible para administradores" });
+        }
+    } else {
+        employee_id = req.employee._id;
+    }
+
+    if (!req.query.from || !req.query.to) {
+        return res.status(HttpStatus.BAD_REQUEST).send({ message: "Falta especifiar el intervalo" });
+    }
+    let query = {
+        from: new Date(req.query.from),
+        to: new Date(req.query.to)
+    };
+    if (query.to < query.from) {
+        return res.status(HttpStatus.BAD_REQUEST).send({ message: "El intervalo de búsqueda es erróneo" });
+    }
+
+    try {
+        records = await facade.getAllRecords(employee_id, query);
+        res.setHeader('Content-disposition', `attachment; filename="${new Date().getTime()}.pdf"`);
+        res.setHeader('Content-type', 'application/pdf');
+        res.status(HttpStatus.OK);
+        pdf.generatePDF(records, res, query.from, query.to);
+    } catch (e) {
+        if (!e.code) {
+            e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        res.status(e.code).send({ message: e.message });
+    }
+}
+
 module.exports = {
     newRecord,
     quickEntry,
     quickExit,
     manualExit,
     getRecords,
-    getIncompletedRecord
+    getIncompletedRecord,
+    getReport
 }

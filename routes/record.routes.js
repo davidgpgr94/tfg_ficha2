@@ -15,4 +15,6 @@ api.post('/quick_exit', auth, RecordController.quickExit);
 api.get('/records', auth, RecordController.getRecords);
 api.get('/incompleted_record', auth, RecordController.getIncompletedRecord);
 
+api.get('/report', auth, RecordController.getReport);
+
 module.exports = api;

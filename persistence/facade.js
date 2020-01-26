@@ -105,6 +105,26 @@ class Facade {
         return records;
     }
 
+    /**
+     * Return all records of the employee specified without pagination.
+     * 
+     * @param {string} employeeId 
+     * @param {Object} query 
+     * @param {Date} query.from
+     * @param {Date} query.to
+     * @returns {Array<Record>} The employee's records
+     * @throws Will throw an error if the employeeId is not in the DB
+     */
+    static async getAllRecords(employeeId, query) {
+        let records;
+        try {
+            records = await RepositoryRecord.getAllRecords(employeeId, query);
+        } catch (e) {
+            throw e;
+        }
+        return records;
+    }
+
     static async getIncompletedRecord(employeeId) {
         let record;
         try {

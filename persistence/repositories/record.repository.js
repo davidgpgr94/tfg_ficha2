@@ -318,6 +318,50 @@ class RepositoryRecord {
         }
     }
 
+    /**
+     * Return all records of the employee specified without pagination.
+     * 
+     * @param {string} employeeId 
+     * @param {Object} query 
+     * @param {Date} query.from
+     * @param {Date} query.to
+     * @returns {Array<Record>} The employee's records
+     * @throws Will throw an error if the employeeId is not in the DB
+     */
+    static async getAllRecords(employeeId, query) {
+        try {
+            let employee = await EmployeeODM.findById(employeeId).exec();
+            if (!employee) {
+                let error = new Error(`El empleado con id ${employeeId} no existe`);
+                error.code = HttpStatus.BAD_REQUEST;
+                throw error;
+            }
+
+            let dtoEmployee = new Employee(employee._id, employee.name, employee.surname, employee.login, employee.is_admin);
+            let find = RecordODM.where('employee', employeeId).sort('entry');
+            find.where('entry').gte(query.from);
+            find.where('entry').lte(query.to);
+
+            let mRecords = await find.lean().exec();
+            let dtoRecords = [];
+            mRecords.forEach(mRecord => {
+                let r = new Record(mRecord._id, dtoEmployee, mRecord.entry);
+                if (mRecord.exit && mRecord.exit !== null && mRecord.exit !== undefined) {
+                    r.setExit(mRecord.exit);
+                }
+                r.setSignedByEmployee(mRecord.signed_by_employee);
+                r.setSignedByAdmin(mRecord.signed_by_admin);
+                dtoRecords.push(r);
+            });
+            return dtoRecords;
+        } catch (e) {
+            if (!e.code) {
+                e.code = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            throw e;
+        }
+    }
+
 }
 
 module.exports = RepositoryRecord;
