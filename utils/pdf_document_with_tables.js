@@ -90,9 +90,12 @@ class PDFDocumentWithTables extends PDFDocument {
             // Allow the user to override style for rows
             prepareRow(row, i);
 
+            // Refresh the y coordinate of the bottom of this row
+            rowBottomY = Math.max(startY + rowHeight, rowBottomY);
+
             // Background alternated
             if (i%2 == 0) {
-                this.rect(startX, (rowBottomY - rowSpacing * 0.3), usableWidth, rowHeight+rowSpacing).fill('#ddd');
+                this.rect(startX, (rowBottomY - rowHeight - 1.5*rowSpacing), usableWidth, rowHeight+rowSpacing).fill('#ddd');
                 this.fill('black').stroke();
             }
 
@@ -103,9 +106,6 @@ class PDFDocumentWithTables extends PDFDocument {
                     align: 'left'
                 });
             });
-
-            // Refresh the y coordinate of the bottom of this row
-            rowBottomY = Math.max(startY + rowHeight, rowBottomY);
 
             // Separation line between rows
             this.moveTo(startX, rowBottomY - rowSpacing * 0.5)
