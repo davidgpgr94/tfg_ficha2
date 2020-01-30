@@ -46,6 +46,11 @@ async function login(req, res) {
  * @param {Response} res Response object
  */
 async function register(req, res) {
+    
+    if (!req.employee.is_admin) {
+        return res.status(HttpStatus.UNAUTHORIZED).send({ message: "Función solo disponible para administradores" });
+    }
+
     let params = req.body;
 
     if (!params.name || params.name == null || !params.surname || params.surname == null || !params.login || params.login == null || !params.password || params.password == null || !params.is_admin || params.is_admin == null) {
